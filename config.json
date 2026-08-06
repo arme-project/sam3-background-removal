@@ -1,0 +1,43 @@
+{
+  "video_name": "trial_1",
+  "prompts": [
+    "person",
+    "violin",
+    "violin_bow"
+  ],
+  "decode": {
+    "fps": null,
+    "output_format": "png"
+  },
+  "segment": {
+    "threshold": 0.3,
+    "mask_threshold": 0.65
+  },
+  "postprocess": {
+    "remove_fg_noise": {
+      "min_area": 50
+    },
+    "fill_small_holes": {
+      "max_hole_area": 50
+    },
+    "opening": {
+      "kernel_size": 3,
+      "iterations": 3
+    },
+    "erosion": {
+      "kernel_size": 3,
+      "iterations": 3
+    },
+    "smooth_gaussian": {
+      "sigma": 2.0
+    }
+  },
+  "cleanup": {
+    "delete_tmp_after_run": false
+  },
+  "paths": {
+    "input_dir": "Input_Videos",
+    "output_dir": "Output_Videos",
+    "tmp_dir": "tmp"
+  }
+}
