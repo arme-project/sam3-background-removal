@@ -3,8 +3,6 @@ Fill small enclosed holes in binary masks, leaving larger holes
 (e.g. violin f-holes) untouched (foreground = white/255, background = black/0).
 """
 
-import argparse
-import json
 from pathlib import Path
 
 import numpy as np
@@ -68,6 +66,11 @@ def process_folder(input_dir: Path, output_dir: Path, max_hole_area: int):
 
 
 if __name__ == "__main__":
+    import argparse
+    import json
+
+    from paths import decoded_frame_count, is_stage_done, postprocess_dir
+
     parser = argparse.ArgumentParser(description="Fill small holes, driven by config.json.")
     parser.add_argument("--config", default="config.json", help="Path to config.json")
     args = parser.parse_args()
@@ -75,10 +78,12 @@ if __name__ == "__main__":
     with open(args.config) as f:
         config = json.load(f)
 
-    video_tmp = Path(config["paths"]["tmp_dir"]) / config["video_name"]
-    input_dir = video_tmp / "postprocessed_frames" / "01_remove_fg_noise"
-    output_dir = video_tmp / "postprocessed_frames" / "02_fill_small_holes"
+    input_dir = postprocess_dir(config, "remove_fg_noise")
+    output_dir = postprocess_dir(config, "fill_small_holes")
 
     max_hole_area = config["postprocess"]["fill_small_holes"]["max_hole_area"]
 
-    process_folder(input_dir, output_dir, max_hole_area)
+    if is_stage_done(output_dir, expected_count=decoded_frame_count(config)):
+        print(f"fill_small_holes already done at {output_dir}, skipping.")
+    else:
+        process_folder(input_dir, output_dir, max_hole_area)

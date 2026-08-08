@@ -3,8 +3,6 @@ Remove foreground noise from binary masks by keeping only the largest
 connected component (foreground = white/255, background = black/0).
 """
 
-import argparse
-import json
 from pathlib import Path
 
 import numpy as np
@@ -60,6 +58,11 @@ def process_folder(input_dir: Path, output_dir: Path):
 
 
 if __name__ == "__main__":
+    import argparse
+    import json
+
+    from paths import decoded_frame_count, is_stage_done, merge_dir, postprocess_dir
+
     parser = argparse.ArgumentParser(description="Remove foreground noise, driven by config.json.")
     parser.add_argument("--config", default="config.json", help="Path to config.json")
     args = parser.parse_args()
@@ -67,8 +70,10 @@ if __name__ == "__main__":
     with open(args.config) as f:
         config = json.load(f)
 
-    video_tmp = Path(config["paths"]["tmp_dir"]) / config["video_name"]
-    input_dir = video_tmp / "merged_frames"
-    output_dir = video_tmp / "postprocessed_frames" / "01_remove_fg_noise"
+    input_dir = merge_dir(config)
+    output_dir = postprocess_dir(config, "remove_fg_noise")
 
-    process_folder(input_dir, output_dir)
+    if is_stage_done(output_dir, expected_count=decoded_frame_count(config)):
+        print(f"remove_fg_noise already done at {output_dir}, skipping.")
+    else:
+        process_folder(input_dir, output_dir)

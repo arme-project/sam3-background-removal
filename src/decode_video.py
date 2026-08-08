@@ -6,6 +6,8 @@ from pathlib import Path
 
 import imageio_ffmpeg
 
+from paths import decoded_frames_dir
+
 
 def extract_frames(video_path, frame_dir):
     os.makedirs(frame_dir, exist_ok=True)
@@ -33,6 +35,6 @@ if __name__ == "__main__":
     paths = config["paths"]
 
     video_path = Path(paths["input_dir"]) / f"{video_name}.mov"
-    frame_dir = Path(paths["tmp_dir"]) / video_name / "decoded_frames"
+    frame_dir = decoded_frames_dir(config)
 
     extract_frames(str(video_path), str(frame_dir))

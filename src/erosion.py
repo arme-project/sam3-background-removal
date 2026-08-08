@@ -7,8 +7,6 @@ Note: erosion_iterations should stay low (e.g. 1) - high iteration counts
 are destructive to thin structures like the bow.
 """
 
-import argparse
-import json
 from pathlib import Path
 
 import numpy as np
@@ -53,6 +51,11 @@ def process_folder(input_dir: Path, output_dir: Path, kernel_size: int, iteratio
 
 
 if __name__ == "__main__":
+    import argparse
+    import json
+
+    from paths import decoded_frame_count, is_stage_done, postprocess_dir
+
     parser = argparse.ArgumentParser(description="Apply binary erosion, driven by config.json.")
     parser.add_argument("--config", default="config.json", help="Path to config.json")
     args = parser.parse_args()
@@ -60,9 +63,12 @@ if __name__ == "__main__":
     with open(args.config) as f:
         config = json.load(f)
 
-    video_tmp = Path(config["paths"]["tmp_dir"]) / config["video_name"]
-    input_dir = video_tmp / "postprocessed_frames" / "03_opening"
-    output_dir = video_tmp / "postprocessed_frames" / "04_erosion"
+    input_dir = postprocess_dir(config, "opening")
+    output_dir = postprocess_dir(config, "erosion")
 
     erosion_cfg = config["postprocess"]["erosion"]
-    process_folder(input_dir, output_dir, erosion_cfg["kernel_size"], erosion_cfg["iterations"])
+
+    if is_stage_done(output_dir, expected_count=decoded_frame_count(config)):
+        print(f"erosion already done at {output_dir}, skipping.")
+    else:
+        process_folder(input_dir, output_dir, erosion_cfg["kernel_size"], erosion_cfg["iterations"])

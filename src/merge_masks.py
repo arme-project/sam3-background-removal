@@ -6,13 +6,10 @@ Adding/removing/renaming prompts in config.json is picked up automatically -
 no code changes needed here.
 """
 
-import argparse
-import json
-import os
-from pathlib import Path
-
 import numpy as np
 from PIL import Image
+
+from paths import merge_dir, segment_dir
 
 
 def merge_frame(mask_paths):
@@ -30,24 +27,25 @@ def merge_frame(mask_paths):
     return (merged * 255).astype(np.uint8)
 
 
-def merge_masks(video_tmp: Path, prompts: list[str]):
-    """OR-merge masks across all prompt subfolders under segmented_frames/.
+def merge_masks(config: dict):
+    """OR-merge masks across all prompt folders, one folder per prompt at its
+    own configured (threshold, mask_threshold).
 
-    Reads: video_tmp/segmented_frames/<prompt>/*.png  for each prompt in `prompts`
-    Writes: video_tmp/merged_frames/*.png
+    Reads: paths.segment_dir(config, prompt)/*.png  for each prompt in config["prompts"]
+    Writes: paths.merge_dir(config)/*.png
 
     A frame is merged only if it exists in at least one prompt folder; prompts
     missing that particular frame are simply skipped for it (rather than
     failing), since segmentation confidence/coverage can differ by prompt.
-    Returns the merged_frames directory.
+    Returns the merge output directory.
     """
-    segmented_root = video_tmp / "segmented_frames"
-    merged_dir = video_tmp / "merged_frames"
+    prompts = config["prompts"]
+    merged_dir = merge_dir(config)
     merged_dir.mkdir(parents=True, exist_ok=True)
 
     prompt_dirs = {}
     for prompt in prompts:
-        prompt_dir = segmented_root / prompt
+        prompt_dir = segment_dir(config, prompt)
         if not prompt_dir.is_dir():
             print(f"Warning: no segmented_frames folder found for prompt '{prompt}' "
                   f"(expected {prompt_dir}) - skipping this prompt.")
@@ -56,8 +54,8 @@ def merge_masks(video_tmp: Path, prompts: list[str]):
 
     if not prompt_dirs:
         raise RuntimeError(
-            f"No prompt folders found under {segmented_root}. "
-            f"Expected one subfolder per prompt in config['prompts']: {prompts}"
+            f"No prompt folders found for prompts: {list(prompts.keys())}. "
+            f"Run segment_frame.py first."
         )
 
     # Union of frame filenames across all found prompt folders, so a frame
@@ -90,6 +88,11 @@ def merge_masks(video_tmp: Path, prompts: list[str]):
 
 
 if __name__ == "__main__":
+    import argparse
+    import json
+
+    from paths import decoded_frame_count, is_stage_done
+
     parser = argparse.ArgumentParser(description="OR-merge per-prompt masks, driven by config.json.")
     parser.add_argument("--config", default="config.json", help="Path to config.json")
     args = parser.parse_args()
@@ -97,10 +100,8 @@ if __name__ == "__main__":
     with open(args.config) as f:
         config = json.load(f)
 
-    video_name = config["video_name"]
-    paths = config["paths"]
-    prompts = config["prompts"]
-
-    video_tmp = Path(paths["tmp_dir"]) / video_name
-
-    merge_masks(video_tmp, prompts)
+    output_dir = merge_dir(config)
+    if is_stage_done(output_dir, expected_count=decoded_frame_count(config)):
+        print(f"Merge already done at {output_dir}, skipping.")
+    else:
+        merge_masks(config)

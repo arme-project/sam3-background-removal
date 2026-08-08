@@ -102,7 +102,8 @@ def segment_frames(frame_dir, mask_dir, prompt, device=None,
 if __name__ == "__main__":
     import argparse
     import json
-    from pathlib import Path
+
+    from paths import decoded_frame_count, decoded_frames_dir, is_stage_done, segment_dir
 
     parser = argparse.ArgumentParser(description="Segment frames with SAM3, driven by config.json.")
     parser.add_argument("--config", default="config.json", help="Path to config.json")
@@ -111,26 +112,33 @@ if __name__ == "__main__":
     with open(args.config) as f:
         config = json.load(f)
 
-    video_name = config["video_name"]
-    paths = config["paths"]
-    segment_cfg = config["segment"]
-
-    video_tmp = Path(paths["tmp_dir"]) / video_name
-    frame_dir = video_tmp / "decoded_frames"
-
+    frame_dir = decoded_frames_dir(config)
     prompts = config["prompts"]
+    expected_count = decoded_frame_count(config)
 
-    device = get_device()
-    print(f"Using device: {device}")
-    model, processor = load_sam3(device)
+    # Check reuse status for every prompt up front, before loading the model -
+    # if everything's already done, no need to pay SAM3's load cost at all.
+    pending_prompts = {}
+    for prompt, prompt_cfg in prompts.items():
+        mask_dir = segment_dir(config, prompt)
+        if is_stage_done(mask_dir, expected_count=expected_count):
+            print(f"Segmenting prompt '{prompt}': already done at {mask_dir}, skipping.")
+        else:
+            pending_prompts[prompt] = (prompt_cfg, mask_dir)
 
-    for prompt in prompts:
-        mask_dir = video_tmp / "segmented_frames" / prompt
-        print(f"Segmenting prompt '{prompt}'...")
-        segment_frames(
-            str(frame_dir), str(mask_dir), prompt,
-            device=device,
-            threshold=segment_cfg["threshold"],
-            mask_threshold=segment_cfg["mask_threshold"],
-            model=model, processor=processor,
-        )
+    if not pending_prompts:
+        print("All prompts already segmented - nothing to do, skipping model load.")
+    else:
+        device = get_device()
+        print(f"Using device: {device}")
+        model, processor = load_sam3(device)
+
+        for prompt, (prompt_cfg, mask_dir) in pending_prompts.items():
+            print(f"Segmenting prompt '{prompt}' -> {mask_dir}")
+            segment_frames(
+                str(frame_dir), str(mask_dir), prompt,
+                device=device,
+                threshold=prompt_cfg["threshold"],
+                mask_threshold=prompt_cfg["mask_threshold"],
+                model=model, processor=processor,
+            )

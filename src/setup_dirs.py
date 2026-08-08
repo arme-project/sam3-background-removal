@@ -2,48 +2,52 @@ import argparse
 import json
 from pathlib import Path
 
+from paths import (
+    decoded_frames_dir,
+    merge_dir,
+    segment_dir,
+)
+
 
 def setup_dirs(config: dict) -> Path:
-    """Create the tmp/<video_name>/... scaffold plus Input_Videos/ and Output_Videos/.
+    """Create the nested, param-aware tmp/<video_name>/... scaffold plus
+    Input_Videos/ and Output_Videos/.
 
-    Directory structure created:
+    Directory structure created (see paths.py for the full shape/rationale):
         tmp/<video_name>/decoded_frames/
-        tmp/<video_name>/segmented_frames/<prompt>/   (one per prompt in config["prompts"])
-        tmp/<video_name>/merged_frames/
-        tmp/<video_name>/postprocessed_frames/01_remove_fg_noise/
-        tmp/<video_name>/postprocessed_frames/02_fill_small_holes/
-        tmp/<video_name>/postprocessed_frames/03_opening/
-        tmp/<video_name>/postprocessed_frames/04_erosion/
-        tmp/<video_name>/postprocessed_frames/05_smooth_gaussian/
+        tmp/<video_name>/segmented_frames/<prompt>/t{th}_mt{mth}/   (per prompt in config["prompts"])
+        tmp/<video_name>/merged_frames/<merge_key>/
         <input_dir>/
         <output_dir>/
 
+    Deliberately does NOT pre-create the postprocess chain
+    (remove_fg_noise/fill_small_holes/opening/erosion/smooth_gaussian/) -
+    each of those stage scripts creates its own output folder on demand when
+    it actually runs (via process_folder()'s own mkdir). Pre-creating them
+    here would leave empty scaffold folders that is_stage_done() could later
+    be confused by, and there's no benefit to having them exist before their
+    stage has actually produced anything.
+
+    Only creates the folders for the *current* config's param combo - other
+    combos' folders (from past runs with different params) are left alone,
+    which is exactly the reuse/coexistence behavior the nested tree is for.
+
     Returns the video's tmp root (tmp/<video_name>).
     """
-    video_name = config["video_name"]
-    prompts = config["prompts"]
     paths = config["paths"]
+    prompts = config["prompts"]
 
-    video_tmp = Path(paths["tmp_dir"]) / video_name
+    decoded_frames_dir(config).mkdir(parents=True, exist_ok=True)
 
-    (video_tmp / "decoded_frames").mkdir(parents=True, exist_ok=True)
     for prompt in prompts:
-        (video_tmp / "segmented_frames" / prompt).mkdir(parents=True, exist_ok=True)
-    (video_tmp / "merged_frames").mkdir(parents=True, exist_ok=True)
+        segment_dir(config, prompt).mkdir(parents=True, exist_ok=True)
 
-    postprocess_stages = [
-        "01_remove_fg_noise",
-        "02_fill_small_holes",
-        "03_opening",
-        "04_erosion",
-        "05_smooth_gaussian",
-    ]
-    for stage in postprocess_stages:
-        (video_tmp / "postprocessed_frames" / stage).mkdir(parents=True, exist_ok=True)
+    merge_dir(config).mkdir(parents=True, exist_ok=True)
 
     Path(paths["input_dir"]).mkdir(exist_ok=True)
     Path(paths["output_dir"]).mkdir(exist_ok=True)
 
+    video_tmp = decoded_frames_dir(config).parent
     return video_tmp
 
 

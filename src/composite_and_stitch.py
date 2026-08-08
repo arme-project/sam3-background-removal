@@ -18,6 +18,8 @@ import imageio_ffmpeg
 import numpy as np
 from PIL import Image
 
+from paths import decoded_frames_dir, postprocess_dir, run_stamp
+
 
 def get_exact_fps(video_path: Path) -> Fraction:
     """
@@ -156,14 +158,15 @@ def main():
 
     video_name = config["video_name"]
     paths = config["paths"]
+    stamp = run_stamp(config)
 
-    video_tmp = Path(paths["tmp_dir"]) / video_name
-    frames_dir = video_tmp / "decoded_frames"
-    masks_dir = video_tmp / "postprocessed_frames" / "05_smooth_gaussian"
+    video_tmp = decoded_frames_dir(config).parent
+    frames_dir = decoded_frames_dir(config)
+    masks_dir = postprocess_dir(config, "smooth_gaussian")
 
     source_video_path = Path(paths["input_dir"]) / f"{video_name}.mov"
-    final_output_path = Path(paths["output_dir"]) / f"{video_name}.mov"
-    silent_output_path = video_tmp / f"{video_name}_silent.mov"
+    final_output_path = Path(paths["output_dir"]) / f"{video_name}_{stamp}.mov"
+    silent_output_path = video_tmp / f"{video_name}_{stamp}_silent.mov"
 
     final_output_path.parent.mkdir(parents=True, exist_ok=True)
 

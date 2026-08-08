@@ -3,8 +3,6 @@ Apply Gaussian blur + rethreshold to binary masks as a light smoothing pass
 on the foreground boundary (foreground = white/255, background = black/0).
 """
 
-import argparse
-import json
 from pathlib import Path
 
 import numpy as np
@@ -44,6 +42,11 @@ def process_folder(input_dir: Path, output_dir: Path, sigma: float):
 
 
 if __name__ == "__main__":
+    import argparse
+    import json
+
+    from paths import decoded_frame_count, is_stage_done, postprocess_dir
+
     parser = argparse.ArgumentParser(description="Apply Gaussian smoothing, driven by config.json.")
     parser.add_argument("--config", default="config.json", help="Path to config.json")
     args = parser.parse_args()
@@ -51,9 +54,12 @@ if __name__ == "__main__":
     with open(args.config) as f:
         config = json.load(f)
 
-    video_tmp = Path(config["paths"]["tmp_dir"]) / config["video_name"]
-    input_dir = video_tmp / "postprocessed_frames" / "04_erosion"
-    output_dir = video_tmp / "postprocessed_frames" / "05_smooth_gaussian"
+    input_dir = postprocess_dir(config, "erosion")
+    output_dir = postprocess_dir(config, "smooth_gaussian")
 
     sigma = config["postprocess"]["smooth_gaussian"]["sigma"]
-    process_folder(input_dir, output_dir, sigma)
+
+    if is_stage_done(output_dir, expected_count=decoded_frame_count(config)):
+        print(f"smooth_gaussian already done at {output_dir}, skipping.")
+    else:
+        process_folder(input_dir, output_dir, sigma)
