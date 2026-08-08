@@ -6,10 +6,10 @@
 #SBATCH --ntasks=1
 #SBATCH --cpus-per-task=8
 #SBATCH --mem=32G
-#SBATCH --time=4:00:0
+#SBATCH --time=1:00:0
 #SBATCH --output=logs/full-trial-%j.out
 
-# Trial-only: runs the ENTIRE pipeline (decode + segment + postprocess) in a
+# Runs the ENTIRE pipeline (decode + segment + postprocess) in a
 # single GPU job, for convenience while testing. Not the recommended
 # production pattern - CPU-bound stages (decode, postprocess) sit idle on
 # an A100 the whole time, wasting scarce GPU allocation. Use run_bluebear.sh
