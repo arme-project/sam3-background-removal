@@ -8,6 +8,8 @@
 #SBATCH --mem=32G
 #SBATCH --time=1:00:0
 #SBATCH --output=logs/full-trial-%j.out
+#SBATCH --mail-type=END,FAIL
+#SBATCH --mail-user=talbotm@bham.ac.uk
 
 # Runs the ENTIRE pipeline (decode + segment + postprocess) in a
 # single GPU job, for convenience while testing. Not the recommended
