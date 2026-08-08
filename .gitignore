@@ -1,5 +1,12 @@
 Input_Videos/
+Input_Images/
 Output_Videos/
+Sample_Masks/
 tmp/
 
 .DS_Store
+
+__pycache__/
+*.pyc
+
+.vscode/
