@@ -1,0 +1,26 @@
+{
+  "segmentation": {
+    "person": {
+      "threshold": [0.2, 0.3, 0.4],
+      "mask_threshold": [0.2, 0.3, 0.4]
+    },
+    "violin": {
+      "threshold": [0.2, 0.3, 0.4],
+      "mask_threshold": [0.2, 0.3, 0.4]
+    },
+    "violin_bow": {
+      "threshold": [0.2, 0.3, 0.4],
+      "mask_threshold": [0.1, 0.2, 0.3, 0.4, 0.5, 0.6]
+    }
+  },
+  "postprocess": {
+    "opening": {
+      "kernel_size": [3, 5],
+      "iterations": [0, 1, 2]
+    },
+    "erosion": {
+      "kernel_size": [3, 5],
+      "iterations": [0, 1, 2]
+    }
+  }
+}
