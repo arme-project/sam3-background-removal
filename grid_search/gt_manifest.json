@@ -1,0 +1,7 @@
+[
+  {
+    "name": "sample_1",
+    "frame": "gt_samples/sample_1/frame.png",
+    "gt_mask": "gt_samples/sample_1/gt.png"
+  }
+]
