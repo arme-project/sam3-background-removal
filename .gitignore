@@ -10,3 +10,7 @@ __pycache__/
 *.pyc
 
 .vscode/
+
+archive_0/
+archive_1/
+archive_2/
