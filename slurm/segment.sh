@@ -8,6 +8,8 @@
 #SBATCH --mem=32G
 #SBATCH --time=4:00:0
 #SBATCH --output=logs/segment-%j.out
+#SBATCH --mail-type=START,END,FAIL
+#SBATCH --mail-user=talbotm@bham.ac.uk
 
 set -e
 

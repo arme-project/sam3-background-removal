@@ -7,6 +7,9 @@
 #SBATCH --mem=16G
 #SBATCH --time=1:00:0
 #SBATCH --output=logs/decode-%j.out
+#SBATCH --mail-type=START,END,FAIL
+#SBATCH --mail-user=talbotm@bham.ac.uk
+
 
 set -e
 
