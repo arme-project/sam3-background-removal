@@ -20,7 +20,7 @@ module load bear-apps/2023a
 module load Python/3.11.3-GCCcore-12.3.0
 
 cd ${SAM3_PROJECT_ROOT}
-source venvs/sam3-env/bin/activate
+source sam3-env/bin/activate
 
 echo "== setup_dirs =="
 python src/setup_dirs.py --config "$CONFIG"
