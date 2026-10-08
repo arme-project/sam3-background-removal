@@ -6,11 +6,13 @@ This is the pipeline for removing backgrounds specifically from musician perform
 
 1. [Example Directory Structure](#1-example-directory-structure)
 2. [Setup](#2-setup)
-3. [Running the Pipeline](#3-running-the-pipeline)
-4. [Recommended Parameters](#4-selecting-parameters--editing-configuration-files)
-5. [Troubleshooting](#5-troubleshooting)
+3. [Local Setup](#3-local-setup)
+4. [BlueBEAR Setup (HPC)](#4-bluebear-setup-hpc)
+5. [Running the Pipeline](#5-running-the-pipeline)
+6. [Selecting Parameters / Editing Configuration Files](#6-selecting-parameters--editing-configuration-files)
+7. [Troubleshooting](#7-troubleshooting)
 
----
+
 
 ## 1. Example Directory Structure
 
@@ -32,10 +34,10 @@ tmp/                                 # Temporary folder which stores intermediat
 └── <video_name>/                    # e.g. tmp/IMG_5097
     ├── decoded_frames/              # raw frames from decode_video.py — this writes out all video frames individually
     ├── segmented_frames/
-    │   ├── person/                  # per-frame masks segemented using prompt="person"
-    │   ├── violin/                  # per-frame masks segemented using prompt="violin"
-    │   └── violin_bow/              # per-frame masks segemented using prompt="violin-bow"
-    ├── merged_frames/               # OR-merged masks (merges the three individual masks), before pre-processing
+    │   ├── person/                  # per-frame masks segmented using prompt="person"
+    │   ├── violin/                  # per-frame masks segmented using prompt="violin"
+    │   └── violin_bow/              # per-frame masks segmented using prompt="violin_bow"
+    ├── merged_frames/               # OR-merged masks (merges the three individual masks), before postprocessing
     └── postprocessed_frames/        # after morphological postprocessing
 
 src/                                 # There is one Python script per pipeline stage
@@ -56,17 +58,17 @@ run_bluebear_full.sh                 # Whole pipeline in one Slurm job (1 hour l
 run_local.sh                         # Runs every stage in order on your own machine. Use --from-stage to resume partway
 ```
 
----
+
 
 ## 2. Setup
 
-SAM3 is a gated model so you need to setup access - this is required for both local and BlueBEAR setup.
+SAM3 is a gated model so you need to set up access - this is required for both local and BlueBEAR setup.
 
 ### Gated SAM3 model access (required for both environments)
 
 `facebook/sam3` is a gated model. Two separate steps are required (access request + local auth)
 
-1. **Request access** on the model page: [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3). Your hf profile needs to be setup, or the "Request access" button won't appear at all.
+1. **Request access** on the model page: [huggingface.co/facebook/sam3](https://huggingface.co/facebook/sam3). Your hf profile needs to be set up, or the "Request access" button won't appear at all.
 2. **Authenticate on the machine you're running on**:
    ```bash
    hf auth login
@@ -86,7 +88,9 @@ SAM3 is a gated model so you need to setup access - this is required for both lo
 
 Do this separately on **each** machine you use (local and BlueBEAR both need their own login).
 
-### Local Setup
+
+
+## 3. Local Setup
 
 **1. Create the conda environment:**
 ```bash
@@ -104,9 +108,11 @@ python -c "import torch; print(torch.backends.mps.is_available())"
 ```
 Should print `True`.
 
-See [Running the Pipeline](#3-running-the-pipeline) below.
+See [Running the Pipeline](#5-running-the-pipeline) below.
 
-### BlueBEAR Setup (HPC)
+
+
+## 4. BlueBEAR Setup (HPC)
 
 **1. Request project access**
 
@@ -118,7 +124,7 @@ If connecting off-campus (and sometimes on macOS even on-campus), you'll also ne
 
 *Option A: BEAR Portal (browser-based, no local setup needed)*
 https://portal.bear.bham.ac.uk - HPC Shell Access can be used directly from here.
-This is accessed by selecting the Clusters dropdown meny and selecting BlueBEAR HPC Shell Access.
+This is accessed by selecting the Clusters dropdown menu and selecting BlueBEAR HPC Shell Access.
 
 *Option B: SSH*
 ```bash
@@ -155,7 +161,7 @@ git clone git@github.com:arme-project/sam3-background-removal.git
 
 **4. Load required modules and set paths**
 
-*IMPORTANT NOTE: (This is step is usually handled automatically inside the Slurm scripts — you only need to run it manually if working interactively on the cluster / doing any updates to the virtual environment. If you generate any new Slurm scripts this step will also be important. So this section can mostly be **ignored** if you are using just using pre-existing slurm scripts and `sbatch`)*
+*IMPORTANT NOTE: (This step is usually handled automatically inside the Slurm scripts — you only need to run it manually if working interactively on the cluster / doing any updates to the virtual environment. If you generate any new Slurm scripts this step will also be important. So this section can mostly be **ignored** if you are just using pre-existing slurm scripts and `sbatch`)*
 
 Run this at the start of every fresh SSH session, before creating or activating the virtual environment. Skipping this causes `pip install` to target the wrong Python environment, leading to confusing "missing package" errors later.
 ```bash
@@ -184,11 +190,11 @@ pip install -r requirements.txt
 
 **6. Authenticate with Hugging Face** — see [Gated SAM3 model access](#gated-sam3-model-access-required-for-both-environments) above.
 
-You're ready to run the pipeline — see [Running the Pipeline](#4-running-the-pipeline) below.
+You're ready to run the pipeline — see [Running the Pipeline](#5-running-the-pipeline) below.
 
----
 
-## 3. Running the Pipeline
+
+## 5. Running the Pipeline
 
 ### Local
 
@@ -256,7 +262,7 @@ If run_local.sh is not executable, run it with:
 
 `bash run_local.sh`
 
----
+
 
 ### BlueBEAR
 
@@ -276,7 +282,7 @@ Steps:
 
 1. Upload the video to `/rds/projects/d/dilucam-arme/sam3-background-removal/Input_Videos/`.
 2. Set `video_name` in `config.json` to match the video (without the `.mov` extension).
-3. Check the parameters (see [Recommended parameters](#recommended-parameters)) and make any desired changes. It is usually good practice to test a very small video clip before processing a large video clip to see which parameters work well.
+3. Check the parameters (see [Recommended parameters](#6-selecting-parameters--editing-configuration-files)) and make any desired changes. It is usually good practice to test a very small video clip before processing a large video clip to see which parameters work well.
 4. Go to the repo root: `cd /rds/projects/d/dilucam-arme/sam3-background-removal`
 5. Run the launcher directly on the login node:
    ```bash
@@ -307,7 +313,7 @@ This runs the whole pipeline in one job with a 1 hour limit. The CPU stages hold
 
 #### Email notifications
 
-Edit two lines to the `#SBATCH` header block at the top of each script in `slurm/`:
+Add two lines to the `#SBATCH` header block at the top of each script in `slurm/`:
 ```
 #SBATCH --mail-type=START,END,FAIL
 #SBATCH --mail-user=YOUR_EMAIL@bham.ac.uk
@@ -328,9 +334,9 @@ Keep:
 
 - `sam3-env/` and `hf_cache/`. They are large but required for running. Rebuilding means reinstalling from `requirements.txt` and downloading the model again.
 
----
 
-## 4. Selecting Parameters / Editing Configuration Files
+
+## 6. Selecting Parameters / Editing Configuration Files
 
 Each run reads one config file, `config.json` by default. Pass `--config path/to/other.json` to use a different one. Two configs for different videos differ only in `video_name`.
 
@@ -343,7 +349,7 @@ Key fields:
 
 Which parameters are best to select / tune?
 
-```
+```jsonc
 {
   "video_name": "VN1_RC#02",        // change this to match the video you want to process
   "paths": {                        // these can usually remain the same
@@ -355,7 +361,7 @@ Which parameters are best to select / tune?
     "person": {
       "short": "p",
       "threshold": 0.3,             // detection confidence cutoff, higher keeps fewer detections
-      "mask_threshold": 0.25        // mask pixel cutoff, lower grows the mask 0.25 is usually decent
+      "mask_threshold": 0.25        // mask pixel cutoff, lower grows the mask, 0.25 is usually decent
     },
     "violin": {
       "short": "v",
@@ -392,15 +398,15 @@ Which parameters are best to select / tune?
 
 Sometimes erosion is undesirable - it is better for videos where it is common for the background to show through at the edges of the mask. Iterations can be set to 0 to prevent this.
 
----
-## 5. Troubleshooting
+
+## 7. Troubleshooting
 
 `squeue -u $USER` can be used to check the queue 
 
 > How to check RDS project quota?
 
 Cloning videos from OneDrive etc.
-Videos are now available again on RDS and have been restored - can simply clone them from there- that is probably easier
+Videos are now available again on RDS and have been restored - can simply clone them from there, that is probably easier
 
 
 
