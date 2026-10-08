@@ -22,6 +22,10 @@ def apply_erosion(mask: np.ndarray, kernel_size: int, iterations: int) -> np.nda
     mask: 2D array, foreground = nonzero (255), background = 0
     returns: eroded mask, same dtype/shape as input
     """
+
+    if iterations < 1:
+        return mask.copy()
+
     binary = mask > 0
     fg_value = mask.max() if mask.max() > 0 else 255
 
@@ -31,7 +35,9 @@ def apply_erosion(mask: np.ndarray, kernel_size: int, iterations: int) -> np.nda
     return (eroded * fg_value).astype(mask.dtype)
 
 
-def process_folder(input_dir: Path, output_dir: Path, kernel_size: int, iterations: int):
+def process_folder(
+    input_dir: Path, output_dir: Path, kernel_size: int, iterations: int
+):
     output_dir.mkdir(parents=True, exist_ok=True)
 
     png_files = sorted(input_dir.glob("*.png"))
@@ -46,8 +52,10 @@ def process_folder(input_dir: Path, output_dir: Path, kernel_size: int, iteratio
         eroded = apply_erosion(mask, kernel_size, iterations)
         Image.fromarray(eroded).save(output_dir / path.name)
 
-    print(f"\nProcessed {len(png_files)} frames "
-          f"(kernel_size={kernel_size}, iterations={iterations}). Output in {output_dir}")
+    print(
+        f"\nProcessed {len(png_files)} frames "
+        f"(kernel_size={kernel_size}, iterations={iterations}). Output in {output_dir}"
+    )
 
 
 if __name__ == "__main__":
@@ -56,7 +64,9 @@ if __name__ == "__main__":
 
     from paths import decoded_frame_count, is_stage_done, postprocess_dir
 
-    parser = argparse.ArgumentParser(description="Apply binary erosion, driven by config.json.")
+    parser = argparse.ArgumentParser(
+        description="Apply binary erosion, driven by config.json."
+    )
     parser.add_argument("--config", default="config.json", help="Path to config.json")
     args = parser.parse_args()
 
@@ -71,4 +81,6 @@ if __name__ == "__main__":
     if is_stage_done(output_dir, expected_count=decoded_frame_count(config)):
         print(f"erosion already done at {output_dir}, skipping.")
     else:
-        process_folder(input_dir, output_dir, erosion_cfg["kernel_size"], erosion_cfg["iterations"])
+        process_folder(
+            input_dir, output_dir, erosion_cfg["kernel_size"], erosion_cfg["iterations"]
+        )
