@@ -9,7 +9,7 @@
     "person": {
       "short": "p",
       "threshold": 0.3,
-      "mask_threshold": 0.4
+      "mask_threshold": 0.25
     },
     "violin": {
       "short": "v",
@@ -32,7 +32,7 @@
     },
     "erosion": {
       "kernel_size": 3,
-      "iterations": 1
+      "iterations": 0
     },
     "smooth_gaussian": {
       "sigma": 2
